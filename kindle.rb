@@ -1,19 +1,25 @@
-﻿module Kindle
+module Kindle
 
 class NavElement
-  attr_reader :title, :file, :attr
-  def initialize(title, file = '', attr = '')
+  attr_reader :title, :attr
+  attr_accessor :file, :children
+  def initialize(title, file = '', children = [], attr = '')
     @title = title
     @file = file
     @attr = attr
+    @children = children
   end
   
   def to_s
     if @file.empty?
-      @title
+      "<span>#@title</span>"
     else
       %Q[<a href="#{@file}" #{@attr}>#{@title}</a>]
     end
+  end
+
+  def children?
+    @children && !@children.empty?
   end
 end
 
@@ -48,22 +54,16 @@ EOS
 
   private
   def write_elements(f, level, elements)
-    spc = ' ' * (level * 4)
+    spc = ' ' * (level * 2)
     f.puts "#{spc}<ol>"
     elements.each do |e|
-      if e.is_a?(Array)
-        f.puts "#{spc}  <li>"
-        if e[0].file.empty?
-          f.puts "#{spc}    <span>#{e[0].title}</span>"
-          write_elements(f, level + 1, e[1..-1])
-        else
-          write_elements(f, level + 1, e)
-        end
-        f.puts "#{spc}  </li>"
-      else
+      unless e.children?
         f.puts "#{spc}  <li>#{e}</li>"
+        next
       end
-      is_first = false if is_first
+      f.puts "#{spc}  <li>#{e}"
+      write_elements(f, level + 1, e.children)
+      f.puts "#{spc}  </li>"
     end
     f.puts "#{spc}</ol>"
   end
@@ -106,7 +106,7 @@ class BookItem
       when '.css'
         'text/css'
       else
-        raise 'cannot specify media-type for #{name}'
+        raise "cannot specify media-type for #{name}"
       end
     end
   end
