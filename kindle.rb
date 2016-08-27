@@ -1,3 +1,5 @@
+# Copyright (c) 2016 dogatana(Toshihiko Ichida)
+
 module Kindle
 
 class NavElement
