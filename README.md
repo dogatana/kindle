@@ -1,2 +1,2 @@
 # kindle
-Kindle Support Library for Kindle
+Kindle Support Library for Ruby
