@@ -1,6 +1,8 @@
 # Copyright (c) 2016 dogatana(Toshihiko Ichida)
 
+
 module Kindle
+require 'forwardable'
 
 class NavElement
   attr_reader :title, :attr
@@ -91,25 +93,63 @@ end
 
 BookInfo = Struct.new(:title, :author, :lang, :cover, :uuid)
 
+class FileIdManager
+  extend Forwardable
+  
+  def initialize
+    @serial = 1
+    @files = {}
+  end
+  
+  def add(file, id)
+    return false if @files.key?(file)
+    
+    unless id
+      id = "id#@serial"
+      @serial += 1
+    end
+    @files[file] = id
+  end
+
+  def_delegators :@files, :'key?', :[], :each, :keys, :vaules
+end
+
 class BookItem
+  def self.idman=(man)
+    @man = man
+  end
+  
+  def self.idman
+    @man
+  end
+  
+  def self.id(file, id)
+    @man.add(file, id)
+  end
+  
   attr_reader :id, :name, :type
-  def initialize(id, name, type = nil)
-    @id, @name, @type = id, name, type
-    unless type
-      @type = case File.extname(name).downcase
-      when '.html' 
-        'text/html'
-      when '.jpg'
-        'image/jpeg'
-      when '.png'
-        'image/png'
-      when '.xhtml'
-        'application/xhtml+xml'
-      when '.css'
-        'text/css'
-      else
-        raise "cannot specify media-type for #{name}"
-      end
+  def initialize(name, id = nil, type = nil)
+    BookItem.idman = FileIdManager.new unless BookItem.idman
+    
+    @name = name
+    @id = BookItem.id(name, id)
+    @type = type || file_type(name)
+  end
+  
+  def file_type(name)
+    case File.extname(name).downcase
+    when '.html' 
+      'text/html'
+    when '.jpg'
+      'image/jpeg'
+    when '.png'
+      'image/png'
+    when '.xhtml'
+      'application/xhtml+xml'
+    when '.css'
+      'text/css'
+    else
+      raise "cannot specify media-type for #{name}"
     end
   end
   
@@ -123,9 +163,8 @@ end
 
 
 class Opf
-
-  def initialize(info, items, spines)
-    @info, @items, @spines = info, items, spines
+  def initialize(info, items, spine)
+    @info, @items, @spine = info, items, spine
   end
 
   def write(file)
@@ -182,15 +221,15 @@ EOS_META
 
   def manifest
     s = "  <manifest>\n"
-    s << "#{BookItem.new('cimage', @info.cover)}\n"
-    s << "#{BookItem.new('nav', 'nav.xhtml')}\n"
+    s << "#{BookItem.new(@info.cover, 'cimage')}\n"
+    s << "#{BookItem.new('nav.xhtml', 'nav')}\n"
     s << @items.map {|item| item.to_s }.join("\n")
     s << "\n  </manifest>"
   end
 
   def spine
     s = "  <spine>\n"
-    @spines.each { |item| s << %Q[      <itemref idref="#{item}" />\n] }
+    @spine.each { |id| s << %Q[      <itemref idref="#{id}" />\n] }
     s << '  </spine>'
   end
 end
