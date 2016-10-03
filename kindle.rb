@@ -1,6 +1,5 @@
 # Copyright (c) 2016 dogatana(Toshihiko Ichida)
 
-
 module Kindle
 require 'forwardable'
 
@@ -53,6 +52,7 @@ EOS
       f.print HEAD.gsub(/@lang@/, @lang)
       write_elements(f, 0, @elements)
       f.puts TAIL
+      f.close
     end
   end
 
@@ -138,18 +138,20 @@ class BookItem
   
   def file_type(name)
     case File.extname(name).downcase
-    when '.html' 
+    when '.html', '.rhtml'
       'text/html'
-    when '.jpg'
+    when '.jpg', '.jpeg'
       'image/jpeg'
+    when '.gif'
+      'image/gif'
     when '.png'
       'image/png'
-    when '.xhtml'
+    when '.xhtml', '.xml'
       'application/xhtml+xml'
     when '.css'
       'text/css'
-    else
-      raise "cannot specify media-type for #{name}"
+    else # default は text/plain とする
+      'text/plain'
     end
   end
   
@@ -177,6 +179,7 @@ class Opf
       f.puts spine
       f.puts
       f.puts tail
+      f.close
     end
   end
 
