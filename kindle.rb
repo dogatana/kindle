@@ -14,10 +14,11 @@ class NavElement
   end
   
   def to_s
+    title = CGI.escape_html(@title)
     if @file.empty?
-      "<span>#@title</span>"
+      "<span>#{title}</span>"
     else
-      %Q[<a href="#{@file}" #{@attr}>#{@title}</a>]
+      %Q[<a href="#{@file}" #{@attr}>#{title}</a>]
     end
   end
 
