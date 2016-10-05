@@ -101,13 +101,11 @@ class FileIdManager
     @files = {}
   end
   
-  def add(file, id)
-    return false if @files.key?(file)
-    
-    unless id
-      id = "id#@serial"
-      @serial += 1
-    end
+  def add(file)
+    id = @files[file]
+    return id if id
+    id = "id#@serial"
+    @serial += 1
     @files[file] = id
   end
 
@@ -115,24 +113,23 @@ class FileIdManager
 end
 
 class BookItem
-  def self.idman=(man)
-    @man = man
-  end
-  
   def self.idman
-    @man
+    @man ||= FileIdManager.new
   end
   
-  def self.id(file, id)
-    @man.add(file, id)
+  def self.get_id(file)
+    @man ||= FileIdManager.new
+    @man[file]
+  end
+  
+  def self.add(file)
+    @man.add(file)
   end
   
   attr_reader :id, :name, :type
   def initialize(name, id = nil, type = nil)
-    BookItem.idman = FileIdManager.new unless BookItem.idman
-    
     @name = name
-    @id = BookItem.id(name, id)
+    @id = BookItem.add(name)
     @type = type || file_type(name)
   end
   
@@ -146,8 +143,10 @@ class BookItem
       'image/gif'
     when '.png'
       'image/png'
-    when '.xhtml', '.xml'
+    when '.xhtml'
       'application/xhtml+xml'
+    when '.xml'
+      'text/plain'
     when '.css'
       'text/css'
     else # default は text/plain とする
