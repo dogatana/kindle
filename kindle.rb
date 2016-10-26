@@ -102,11 +102,11 @@ class FileIdManager
     @files = {}
   end
   
-  def add(file)
-    id = @files[file]
-    return id if id
-    id = "id#@serial"
-    @serial += 1
+  def add(file, id)
+    unless id
+      id = "id#@serial" 
+      @serial += 1
+    end
     @files[file] = id
   end
 
@@ -123,20 +123,20 @@ class BookItem
     @man[file]
   end
   
-  def self.add(file)
-    @man.add(file)
+  def self.add(file, id)
+    @man.add(file, id)
   end
   
   attr_reader :id, :name, :type
   def initialize(name, id = nil, type = nil)
     @name = name
-    @id = BookItem.add(name)
+    @id = BookItem.add(name, id)
     @type = type || file_type(name)
   end
   
   def file_type(name)
     case File.extname(name).downcase
-    when '.html', '.rhtml'
+    when '.html'
       'text/html'
     when '.jpg', '.jpeg'
       'image/jpeg'
